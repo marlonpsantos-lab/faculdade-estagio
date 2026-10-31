@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Lanchonete</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans">
+
+    <!-- Header Admin -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center space-x-2">
+                <i class="fa-solid fa-gauge text-amber-400"></i>
+                <span>Painel Administrativo</span>
+            </h1>
+            <div class="flex items-center space-x-3">
+                <a href="/" class="text-sm bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg transition">Ver Cardápio</a>
+                <a href="/logout" class="text-sm bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">Sair</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Coluna 1: Cadastrar Produto -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
+            <h2 class="text-lg font-bold mb-4 flex items-center space-x-2 text-slate-800">
+                <i class="fa-solid fa-plus-circle text-indigo-600"></i>
+                <span>Cadastrar Novo Produto</span>
+            </h2>
+            <form action="/admin/produto/novo" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Nome do Produto</label>
+                    <input type="text" name="nome" required class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Categoria</label>
+                    <select name="categoria" required class="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="" disabled selected>Selecione uma categoria</option>
+                        <option value="Salgados">Salgados</option>
+                        <option value="Doces">Doces</option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Descrição</label>
+                    <textarea name="descricao" rows="2" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Preço (R$)</label>
+                    <input type="number" step="0.01" name="preco" required class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Link da Imagem (URL) ou Arquivo</label>
+                    <input type="text" name="imagem_url" placeholder="https://exemplo.com/foto.jpg" class="w-full border rounded-lg p-2.5 text-sm mb-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="file" name="imagem_arquivo" class="w-full text-xs text-slate-500">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition shadow">Salvar Produto</button>
+            </form>
+        </div>
+
+        <!-- Coluna 2 e 3: Gestão de Pedidos e Produtos -->
+        <div class="lg:col-span-2 space-y-8">
+
+            <!-- Pedidos Pendentes -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold mb-4 flex items-center space-x-2 text-amber-600">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Pedidos Pendentes / Solicitações</span>
+                </h2>
+                <div class="space-y-4">
+                    {% if pedidos_pendentes %}
+                        {% for p in pedidos_pendentes %}
+                        <div class="border border-amber-200 bg-amber-50/40 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="font-bold text-slate-900">Mesa: {{ p.mesa }}</span>
+                                    <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">{{ p.cliente_nome }}</span>
+                                    <span class="text-xs text-slate-400">{{ p.data_hora }}</span>
+                                </div>
+                                <div class="mt-2 text-xs text-slate-700 space-y-1 itens-pedido" data-itens="{{ p.itens }}"></div>
+                                <p class="text-sm font-extrabold text-slate-900 mt-2">Total: R$ {{ "%.2f"|format(p.total) }}</p>
+                            </div>
+
+                            <!-- Ações: Atender ou Excluir -->
+                            <div class="flex items-center space-x-2">
+                                <form action="/admin/pedido/atender/{{ p.id }}" method="POST">
+                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow flex items-center space-x-1">
+                                        <i class="fa-solid fa-check"></i>
+                                        <span>Atender</span>
+                                    </button>
+                                </form>
+                                <form action="/admin/pedido/deletar/{{ p.id }}" method="POST" onsubmit="return confirm('Tem certeza que deseja cancelar/excluir este pedido?');">
+                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow flex items-center space-x-1" title="Excluir Pedido">
+                                        <i class="fa-solid fa-trash"></i>
+                                        <span>Excluir</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-slate-400 text-sm">Nenhum pedido pendente no momento.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Pedidos Atendidos -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold mb-4 flex items-center space-x-2 text-emerald-600">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>Pedidos Atendidos</span>
+                </h2>
+                <div class="space-y-3 max-h-60 overflow-y-auto">
+                    {% if pedidos_atendidos %}
+                        {% for p in pedidos_atendidos %}
+                        <div class="border border-slate-100 p-3 rounded-xl flex justify-between items-center text-sm">
+                            <div>
+                                <span class="font-bold text-slate-800">Mesa {{ p.mesa }} - {{ p.cliente_nome }}</span>
+                                <span class="text-xs text-slate-400 ml-2">{{ p.data_hora }}</span>
+                                <div class="text-xs text-slate-600 mt-1 space-y-0.5 itens-pedido" data-itens="{{ p.itens }}"></div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="font-bold text-emerald-600">R$ {{ "%.2f"|format(p.total) }}</span>
+                                <form action="/admin/pedido/deletar/{{ p.id }}" method="POST" onsubmit="return confirm('Excluir este pedido do histórico?');">
+                                    <button type="submit" class="text-red-400 hover:text-red-600 p-1 transition" title="Excluir Pedido">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-slate-400 text-sm">Nenhum pedido atendido registrado.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Histórico de Vendas por Dia -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h2 class="text-lg font-bold flex items-center space-x-2 text-indigo-600">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <span>Histórico de Vendas por Dia</span>
+                    </h2>
+
+                    <!-- Campo de Calendário -->
+                    <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                        <label for="filtro-data" class="text-xs font-bold text-slate-600 uppercase"><i class="fa-solid fa-filter mr-1"></i> Data:</label>
+                        <input type="date" id="filtro-data" value="{{ data_selecionada }}" onchange="mudarData(this.value)" class="bg-transparent text-sm font-semibold text-slate-800 outline-none cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-600 uppercase text-xs font-bold">
+                            <tr>
+                                <th class="p-3">Data</th>
+                                <th class="p-3">Total de Pedidos</th>
+                                <th class="p-3">Faturamento</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% if historico_vendas %}
+                                {% for h in historico_vendas %}
+                                <tr>
+                                    <td class="p-3 font-medium">{{ h.data_dia }}</td>
+                                    <td class="p-3">{{ h.total_pedidos }}</td>
+                                    <td class="p-3 font-bold text-indigo-600">R$ {{ "%.2f"|format(h.faturamento_total or 0) }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="p-4 text-center text-slate-400 text-sm">Nenhuma venda registrada nesta data.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Listagem de Produtos Cadastrados -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold mb-4 flex items-center space-x-2 text-slate-800">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Produtos Cadastrados no Banco</span>
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% for p in produtos %}
+                    <div class="flex items-center justify-between border p-3 rounded-xl bg-slate-50/50">
+                        <div class="flex items-center space-x-3">
+                            <img src="{{ p.imagem }}" class="w-12 h-12 object-cover rounded-lg bg-slate-200">
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">{{ p.nome }}</h4>
+                                <span class="text-xs text-indigo-600 font-bold">{{ p.categoria }} • R$ {{ "%.2f"|format(p.preco) }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <button onclick="abrirModalEdicao('{{ p.id }}', '{{ p.nome }}', '{{ p.categoria }}', '{{ p.descricao }}', '{{ p.preco }}', '{{ p.imagem }}')" class="text-blue-500 hover:text-blue-700 p-2 transition" title="Editar Produto">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <form action="/admin/produto/deletar/{{ p.id }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este produto?');">
+                                <button type="submit" class="text-red-500 hover:text-red-700 p-2 transition" title="Excluir Produto">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Modal de Edição de Produto -->
+    <div id="modal-edicao" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-4 border-b mb-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
+                    <span>Editar Produto</span>
+                </h3>
+                <button onclick="fecharModalEdicao()" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="form-edicao" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Nome do Produto</label>
+                    <input type="text" id="edit-nome" name="nome" required class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Categoria</label>
+                    <select id="edit-categoria" name="categoria" required class="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="Salgados">Salgados</option>
+                        <option value="Doces">Doces</option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Descrição</label>
+                    <textarea id="edit-descricao" name="descricao" rows="2" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Preço (R$)</label>
+                    <input type="number" step="0.01" id="edit-preco" name="preco" required class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Alterar Imagem (URL ou Arquivo)</label>
+                    <input type="text" name="imagem_url" placeholder="Deixe em branco para manter a atual ou cole nova URL" class="w-full border rounded-lg p-2.5 text-sm mb-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="file" name="imagem_arquivo" class="w-full text-xs text-slate-500">
+                </div>
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="fecharModalEdicao()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl transition">Cancelar</button>
+                    <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition shadow">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts utilitários -->
+    <script>
+        // Função para alternar a data no histórico de vendas via calendário
+        function mudarData(novaData) {
+            if (novaData) {
+                window.location.href = `/admin?data=${novaData}`;
+            }
+        }
+
+        // Formatação dos itens salvos em JSON de forma limpa
+        document.querySelectorAll('.itens-pedido').forEach(el => {
+            try {
+                const rawData = el.getAttribute('data-itens');
+                const cleanJson = rawData.replace(/'/g, '"');
+                const itens = JSON.parse(cleanJson);
+
+                let html = '<ul class="list-disc list-inside space-y-1">';
+                itens.forEach(item => {
+                    let obsText = item.observacao ? ` <span class="text-amber-600 font-semibold italic">(Obs: ${item.observacao})</span>` : '';
+                    html += `<li><b>${item.qtd}x</b> ${item.nome}${obsText} <span class="text-slate-500">(R$ ${item.preco.toFixed(2)} un)</span></li>`;
+                });
+                html += '</ul>';
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = el.getAttribute('data-itens');
+            }
+        });
+
+        // Funções para abrir e fechar a modal de edição
+        function abrirModalEdicao(id, nome, categoria, descricao, preco, imagem) {
+            const modal = document.getElementById('modal-edicao');
+            const form = document.getElementById('form-edicao');
+
+            form.action = `/admin/produto/editar/${id}`;
+            document.getElementById('edit-nome').value = nome;
+            document.getElementById('edit-categoria').value = categoria;
+            document.getElementById('edit-descricao').value = descricao !== 'None' ? descricao : '';
+            document.getElementById('edit-preco').value = preco;
+
+            modal.classList.remove('hidden');
+        }
+
+        function fecharModalEdicao() {
+            const modal = document.getElementById('modal-edicao');
+            modal.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
